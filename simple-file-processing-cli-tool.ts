@@ -27,8 +27,10 @@ const path = require('path')
 const { promisify } = require('util');
 const pipelineAsync = promisify(pipeline);
 
-const args = process.argv.slice(2);
-const arg = args[0];
+type filePath = string | string[];
+
+const args: filePath  = process.argv.slice(2);
+const arg: filePath = args[0];
 
 // verify argument was passed with the nodejs script
 if (!arg) {
@@ -40,11 +42,11 @@ if (!arg) {
 // const isItAbsolutePath = path.resolve(filename);
 
 // normalize the path to resolve use of different separators and characters like {.., .}
-const normalizedArg = path.normalize(arg);
+const normalizedArg: filePath = path.normalize(arg);
 
-let filePath: string = "";
+let filePath: filePath = "";
 
-const outputPath: string = path.join(__dirname, 'transformedOutput.txt');
+const outputPath: filePath = path.join(__dirname, 'transformedOutput.txt');
 //console.log(isItAbsolutePath);
 
 //const dir = __dirname
