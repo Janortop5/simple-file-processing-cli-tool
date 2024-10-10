@@ -20,7 +20,9 @@
 // -- Normalizing text and converting to lowercase are valid transformations, but there are others that are commonly used in file processing
 // -- How to use typescript
 //
-const fs = require('fs').promises;
+
+const fs = require('fs');
+const fspromises = require('fs').promises;
 const { pipeline } = require('stream');
 const readline = require('readline');
 const path = require('path')
@@ -29,34 +31,42 @@ const pipelineAsync = promisify(pipeline);
 
 const args = process.argv.slice(2);
 const arg = args[0];
+
+if (!arg || arg == undefined) {
+    console.log('no argument passed \nplease specify filename');
+    process.exit(1);
+} 
+
 const filename = path.basename(arg);
-const isItAbsolutePath = path.resolve(filename);
+// const isItAbsolutePath = path.resolve(filename);
 let filePath = null;
 
 //console.log(isItAbsolutePath);
 
-const dir = __dirname
+//const dir = __dirname
 // const filePath = path.join(`${dir}`,`${arg}`);
 
-if (arg == isItAbsolutePath) {
-    filePath = isItAbsolutePath;
-} else {
-    filePath = path.join(`${dir},${arg}`);
-} 
-
-
+//if (arg == isItAbsolutePath) {
+//    filePath = isItAbsolutePath;
+//} else {
+//    filePath = path.join(`${dir},${arg}`);
+//} 
 
 //console.log(filename);
 //console.log(typeof dir, dir);
 //console.log(typeof basename, basename);
 
-if (!arg) {
-    console.log('no argument passed \nplease specify filename');
+//if (!arg) {
+//    console.log('no argument passed \nplease specify filename');
+//}
+
+if (!path.isAbsolute(arg)) {
+    filePath = path.join(__dirname, arg); //Resolve relative to current directory
 }
 
 async function readTransformWrite() {
     try {
-        await fs.access(filePath);
+        await fspromises.access(filePath);
 
         await pipelineAsync(
             fs.createReadStream(filePath)
