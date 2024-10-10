@@ -24,7 +24,6 @@
 const fs = require('fs');
 const fspromises = require('fs').promises;
 const { pipeline } = require('stream');
-const readline = require('readline');
 const path = require('path')
 const { promisify } = require('util');
 const pipelineAsync = promisify(pipeline);
@@ -32,7 +31,7 @@ const pipelineAsync = promisify(pipeline);
 const args = process.argv.slice(2);
 const arg = args[0];
 
-if (!arg || arg == undefined) {
+if (!arg) {
     console.log('no argument passed \nplease specify filename');
     process.exit(1);
 } 
@@ -62,6 +61,8 @@ let filePath = null;
 
 if (!path.isAbsolute(arg)) {
     filePath = path.join(__dirname, arg); //Resolve relative to current directory
+} else {
+    filePath = arg
 }
 
 async function readTransformWrite() {
