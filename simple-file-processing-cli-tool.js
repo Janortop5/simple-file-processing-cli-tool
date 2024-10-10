@@ -67,21 +67,25 @@ if (!path.isAbsolute(arg)) {
 
 async function readTransformWrite() {
     try {
-        await fspromises.access(filePath);
+        await fspromises.access(filePath)
+
+        const readStream = fs.createReadStream(filePath)
+            .on('data', (chunk) => {
+                console.log(chunk);
+            })
+            .on('error', (error) => {
+            console.error('Error reading the file:', error.message);
+        })
 
         await pipelineAsync(
-            fs.createReadStream(filePath)
-                .on('data', (chunk) => {
-                    console.log(chunk);
-                })
-                .on('error', (error) => {
-                console.error('Error reading the file:', error.message);
-            }),
+            readStream,
             process.stdout
         );
     } catch(error) {
         if (error.code === 'ENOENT') {
             console.error('File does not exist');
+        } else if (error.code === 'EACCES' || error.code === 'EPERM') {
+            console.error('Permission denied');
         } else {
         console.error('Pipeline failed:', error.message);
         }
