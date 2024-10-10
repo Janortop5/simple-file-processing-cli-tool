@@ -22,7 +22,6 @@
 //
 
 const fs = require('fs');
-const fspromises = require('fs').promises;
 const { pipeline } = require('stream');
 const path = require('path')
 const { promisify } = require('util');
@@ -36,8 +35,10 @@ if (!arg) {
     process.exit(1);
 } 
 
-const filename = path.basename(arg);
+//const filename = path.basename(path.normalize(arg));
 // const isItAbsolutePath = path.resolve(filename);
+const normalizedArg = path.normalize(arg);
+
 let filePath = null;
 
 //console.log(isItAbsolutePath);
@@ -59,16 +60,17 @@ let filePath = null;
 //    console.log('no argument passed \nplease specify filename');
 //}
 
-if (!path.isAbsolute(arg)) {
-    filePath = path.join(__dirname, arg); //Resolve relative to current directory
+if (!path.isAbsolute(normalizedArg)) {
+    filePath = path.join(__dirname, normalizedArg); //Resolve relative to current directory
 } else {
-    filePath = arg
+    filePath = normalizedArg;
 }
 
 async function readTransformWrite() {
     try {
-        await fspromises.access(filePath)
+        await fs.promises.access(filePath) // check if file exists
 
+        // file openeed immediately after verifying it exists to prevent race condition
         const readStream = fs.createReadStream(filePath)
             .on('data', (chunk) => {
                 console.log(chunk);
