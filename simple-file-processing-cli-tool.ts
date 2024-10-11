@@ -22,11 +22,13 @@
 //
 
 const fs = require('fs');
-const { pipeline } = require('stream');
+const { pipeline, Transform } = require('stream');
 const path = require('path')
 const { promisify } = require('util');
 const pipelineAsync = promisify(pipeline);
+const masking = require('./anonymize');
 
+// type for filenames, filepath, arguments
 type filePath = string | string[];
 
 const args: filePath  = process.argv.slice(2);
@@ -43,10 +45,9 @@ if (!arg) {
 
 // normalize the path to resolve use of different separators and characters like {.., .}
 const normalizedArg: filePath = path.normalize(arg);
-
 let filePath: filePath = "";
-
 const outputPath: filePath = path.join(__dirname, 'transformedOutput.txt');
+
 //console.log(isItAbsolutePath);
 
 //const dir = __dirname
@@ -66,6 +67,14 @@ const outputPath: filePath = path.join(__dirname, 'transformedOutput.txt');
 //    console.log('no argument passed \nplease specify filename');
 //}
 
+// extend tranform pipe to anonymize data, our transformation function
+class TransformFile extends Transform {
+    _transform(chunk, encoding, callback) {
+        const anonymizedData = masking(chunk);
+        this.push(anonymizedData);
+        callback();
+    }
+}
 
 if (!path.isAbsolute(normalizedArg)) {
     filePath = path.join(__dirname, normalizedArg); //Resolve relative to current directory
@@ -77,19 +86,38 @@ async function readTransformWrite() {
     try {
         await fs.promises.access(filePath) // check if file exists
 
-        // file openeed immediately after verifying it exists to prevent race condition
+        // Stream created immediately after verifying it exists to prevent race condition
         const readStream = fs.createReadStream(filePath)
-            .on('data', (chunk) => {
-                const data = chunk.toString()
-            })
+            //.on('data', (chunk) => {
+            //    const data = chunk.toString()
+            //})
             .on('error', (error) => {
             console.error('Error reading the file:', error.message);
             })
-
+        
+        // Write stream to write to our output file
         const writeStream = fs.createWriteStream(outputPath);
+ 
+        // Call transformation function and pass data chunks to it
+        //function transformFile(readStream, masking) {
+        //    let data = null;
 
+        //    readStream
+        //    .on('data', (chunk) => {
+        //        data = chunk.toString();
+                //return data;
+        //    })
+        //    return(data);
+        //    masking(data);
+        //}
+        
+        // create new instance of custom stream for file transformation
+        const transformFile = new TransformFile();
+       
+        // Async pipeline to join our read stream to our write stream
         await pipelineAsync(
             readStream,
+            transformFile,
             writeStream 
         );
     } catch(error) {
@@ -98,7 +126,7 @@ async function readTransformWrite() {
         } else if (error.code === 'EACCES' || error.code === 'EPERM') {
             console.error('Permission denied');
         } else {
-        console.error('Pipeline failed:', error.message);
+            console.error('Pipeline failed:', error.message);
         }
     }
 }
