@@ -69,7 +69,7 @@ const outputPath: filePath = path.join(__dirname, 'cleanedFullCompanyLogs.log');
 
 // extend tranform pipe to anonymize data, our transformation function to be used for our custom class
 class TransformFile extends Transform {
-    constructor(options) {
+    constructor(options?) {
         super(options);
         this.remainder = '';
         this.maskingFunction = masking;
