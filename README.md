@@ -82,7 +82,6 @@ npx tsc
 
 ## Dependencies
 
-- `@faker-js/faker`: Used for generating realistic mock data.
 - `@types/node`: TypeScript definitions for Node.js.
 - `ts-node` and `tsx`: TypeScript execution and REPL for Node.js.
 
