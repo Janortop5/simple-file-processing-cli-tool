@@ -46,7 +46,7 @@ if (!arg) {
 // normalize the path to resolve use of different separators and characters like {.., .}
 const normalizedArg: filePath = path.normalize(arg);
 let filePath: filePath = "";
-const outputPath: filePath = path.join(__dirname, 'transformedOutput.txt');
+const outputPath: filePath = path.join(__dirname, 'cleanedFullCompanyLogs.log');
 
 //console.log(isItAbsolutePath);
 
@@ -67,10 +67,16 @@ const outputPath: filePath = path.join(__dirname, 'transformedOutput.txt');
 //    console.log('no argument passed \nplease specify filename');
 //}
 
-// extend tranform pipe to anonymize data, our transformation function
+// extend tranform pipe to anonymize data, our transformation function to be used for our custom class
 class TransformFile extends Transform {
+    constructor(options) {
+        super(options);
+        this.remainder = '';
+        this.maskingFunction = masking;
+    }
+
     _transform(chunk, encoding, callback) {
-        const anonymizedData = masking(chunk);
+        const anonymizedData = this.maskingFunction(chunk.toString());
         this.push(anonymizedData);
         callback();
     }
@@ -114,7 +120,7 @@ async function readTransformWrite() {
         // create new instance of custom stream for file transformation
         const transformFile = new TransformFile();
        
-        // Async pipeline to join our read stream to our write stream
+        // Async pipeline to join our read stream to our write stream with our transform stream inbetween
         await pipelineAsync(
             readStream,
             transformFile,
