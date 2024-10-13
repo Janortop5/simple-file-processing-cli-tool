@@ -1,8 +1,8 @@
-import * as fs from 'fs';
-import { pipeline, Transform } from 'stream';
-import * as path from 'path';
-import { promisify } from 'util';
-import { masking } from './anonymize'; // Assuming this is the correct import
+const fs = require('fs');
+const { pipeline, Transform } = require('stream');
+const path = require('path');
+const { promisify } = require('util');
+const masking = require('./anonymize'); 
 
 const pipelineAsync = promisify(pipeline);
 
@@ -72,7 +72,7 @@ class TransformFile extends Transform {
     private remainder: string = '';
     private maskingFunction: (data: string) => string;
 
-    constructor(options?: Transform.TransformOptions) {
+    constructor(options?: typeof Transform) {
         super(options);
         this.maskingFunction = masking;
     }
