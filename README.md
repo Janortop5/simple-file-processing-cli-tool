@@ -41,8 +41,20 @@ This will generate a file named `fullCompanyLogs.log` with 1,000,000 log entries
 
 To anonymize a log file:
 
+using ts-node
 ```bash
 ts-node simple-file-processing-cli-tool.ts path/to/your/logfile.log
+```
+
+using tsx
+```bash
+ts-node simple-file-processing-cli-tool.ts path/to/your/logfile.log
+```
+
+compile using typescript compiler and run as javascript
+```bash
+npx tsc simple-file-processing-cli-tool.ts anonymize.ts
+node simple-file-processing-cli-tool.js path/to/your/logfile.log
 ```
 
 This will process the input file and create an anonymized version named `cleanedFullCompanyLogs.log` in the same directory as the script.
@@ -83,7 +95,7 @@ npx tsc
 ## Dependencies
 
 - `@types/node`: TypeScript definitions for Node.js.
-- `ts-node` and `tsx`: TypeScript execution and REPL for Node.js.
+- `ts-node` and `tsx`: TypeScript execution.
 
 ## Future Work
 
