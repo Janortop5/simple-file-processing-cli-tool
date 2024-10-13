@@ -1,3 +1,11 @@
+import * as fs from 'fs';
+import { pipeline, Transform } from 'stream';
+import * as path from 'path';
+import { promisify } from 'util';
+import { masking } from './anonymize'; // Assuming this is the correct import
+
+const pipelineAsync = promisify(pipeline);
+
 // simple file processing CLI tool
 // Accepting a file via CLI: should this be done with readline? should the file be passed to the script as an argument? How else can the file be passed to the script?
 // How do you process the file asynchronously? by breaking it into chunks? using a stream? is a stream synchronous or asynchronous?
@@ -19,20 +27,12 @@
 // -- for asynchronicity, the promise versions of the fs module can be imported and used with async/await
 // -- Normalizing text and converting to lowercase are valid transformations, but there are others that are commonly used in file processing
 // -- How to use typescript
-//
-
-const fs = require('fs');
-const { pipeline, Transform } = require('stream');
-const path = require('path')
-const { promisify } = require('util');
-const pipelineAsync = promisify(pipeline);
-const masking = require('./anonymize');
 
 // type for filenames, filepath, arguments
-type filePath = string | string[];
+type FilePath = string;
 
-const args: filePath  = process.argv.slice(2);
-const arg: filePath = args[0];
+const args: string[] = process.argv.slice(2);
+const arg: string | undefined = args[0];
 
 // verify argument was passed with the nodejs script
 if (!arg) {
@@ -44,9 +44,9 @@ if (!arg) {
 // const isItAbsolutePath = path.resolve(filename);
 
 // normalize the path to resolve use of different separators and characters like {.., .}
-const normalizedArg: filePath = path.normalize(arg);
-let filePath: filePath = "";
-const outputPath: filePath = path.join(__dirname, 'cleanedFullCompanyLogs.log');
+const normalizedArg: FilePath = path.normalize(arg);
+let filePath: FilePath = "";
+const outputPath: FilePath = path.join(__dirname, 'cleanedFullCompanyLogs.log');
 
 //console.log(isItAbsolutePath);
 
@@ -69,13 +69,15 @@ const outputPath: filePath = path.join(__dirname, 'cleanedFullCompanyLogs.log');
 
 // extend tranform pipe to anonymize data, our transformation function to be used for our custom class
 class TransformFile extends Transform {
-    constructor(options?) {
+    private remainder: string = '';
+    private maskingFunction: (data: string) => string;
+
+    constructor(options?: Transform.TransformOptions) {
         super(options);
-        this.remainder = '';
         this.maskingFunction = masking;
     }
 
-    _transform(chunk, encoding, callback) {
+    _transform(chunk: Buffer, encoding: BufferEncoding, callback: (error?: Error | null, data?: any) => void): void {
         const anonymizedData = this.maskingFunction(chunk.toString());
         this.push(anonymizedData);
         callback();
@@ -88,18 +90,15 @@ if (!path.isAbsolute(normalizedArg)) {
     filePath = normalizedArg; // normalized argument path
 }
 
-async function readTransformWrite() {
+async function readTransformWrite(): Promise<void> {
     try {
         await fs.promises.access(filePath) // check if file exists
 
         // Stream created immediately after verifying it exists to prevent race condition
         const readStream = fs.createReadStream(filePath)
-            //.on('data', (chunk) => {
-            //    const data = chunk.toString()
-            //})
-            .on('error', (error) => {
-            console.error('Error reading the file:', error.message);
-            })
+            .on('error', (error: NodeJS.ErrnoException) => {
+                console.error('Error reading the file:', error.message);
+            });
         
         // Write stream to write to our output file
         const writeStream = fs.createWriteStream(outputPath);
@@ -127,12 +126,12 @@ async function readTransformWrite() {
             writeStream 
         );
     } catch(error) {
-        if (error.code === 'ENOENT') {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
             console.error('File does not exist');
-        } else if (error.code === 'EACCES' || error.code === 'EPERM') {
+        } else if ((error as NodeJS.ErrnoException).code === 'EACCES' || (error as NodeJS.ErrnoException).code === 'EPERM') {
             console.error('Permission denied');
         } else {
-            console.error('Pipeline failed:', error.message);
+            console.error('Pipeline failed:', (error as Error).message);
         }
     }
 }
