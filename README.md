@@ -53,7 +53,7 @@ ts-node simple-file-processing-cli-tool.ts path/to/your/logfile.log
 
 compile using typescript compiler and run as javascript
 ```bash
-npx tsc simple-file-processing-cli-tool.ts anonymize.ts
+tsc -p .
 node simple-file-processing-cli-tool.js path/to/your/logfile.log
 ```
 
