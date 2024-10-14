@@ -5,6 +5,6 @@
     "tsx": "^4.19.1"
   },
   "dependencies": {
-    "@faker-js/faker": "^9.0.3"
+    ""
   }
 }
