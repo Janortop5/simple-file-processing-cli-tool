@@ -2,7 +2,7 @@ const fs = require('fs');
 const { pipeline, Transform } = require('stream');
 const path = require('path');
 const { promisify } = require('util');
-const masking = require('./anonymize'); 
+const { Anonymizer } = require('./anonymize'); 
 
 const pipelineAsync = promisify(pipeline);
 
@@ -69,17 +69,30 @@ const outputPath: FilePath = path.join(__dirname, 'cleanedFullCompanyLogs.log');
 
 // extend tranform pipe to anonymize data, our transformation function to be used for our custom class
 class TransformFile extends Transform {
-    private remainder: string = '';
-    private maskingFunction: (data: string) => string;
+    private remainder: string | undefined = '';
 
     constructor(options?: typeof Transform) {
         super(options);
-        this.maskingFunction = masking;
+        this.masking = new Anonymizer();
+        this.remainder = '';
     }
 
     _transform(chunk: Buffer, encoding: BufferEncoding, callback: (error?: Error | null, data?: any) => void): void {
-        const anonymizedData = this.maskingFunction(chunk.toString());
-        this.push(anonymizedData);
+        const data = this.remainder + chunk.toString();
+        const lines = data.split('\n');
+        this.remainder = lines.pop()
+
+        const anonymizedLines = lines.map(line => this.masking.anonymizeLine(line));
+        this.push(anonymizedLines.join('\n') + '\n');
+
+        callback();
+    }
+
+    _flush(callback: (error?: Error | null, data?: any) => void): void {
+        if (this.remainder) {
+            this.push(this.masking.anonmyzedLine(this.remainder));
+        }
+
         callback();
     }
 }
@@ -91,7 +104,6 @@ if (!path.isAbsolute(normalizedArg)) {
 }
 
 async function readTransformWrite(): Promise<void> {
-    try {
         await fs.promises.access(filePath) // check if file exists
 
         // Stream created immediately after verifying it exists to prevent race condition
@@ -118,13 +130,15 @@ async function readTransformWrite(): Promise<void> {
         
         // create new instance of custom stream for file transformation
         const transformFile = new TransformFile();
-       
-        // Async pipeline to join our read stream to our write stream with our transform stream inbetween
+
+    try {
         await pipelineAsync(
             readStream,
             transformFile,
             writeStream 
         );
+
+        console.log('File anonymization complete');
     } catch(error) {
         if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
             console.error('File does not exist');
@@ -134,6 +148,7 @@ async function readTransformWrite(): Promise<void> {
             console.error('Pipeline failed:', (error as Error).message);
         }
     }
+    process.exit(1);
 }
 
 readTransformWrite();
