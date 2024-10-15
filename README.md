@@ -62,7 +62,7 @@ This will process the input file and create an anonymized version named `cleaned
 ## How It Works
 
 1. The tool reads the input file using a readable stream.
-2. Each chunk of data is passed through a custom `TransformFile` class, which applies the anonymization function.
+2. Each chunk of data is passed through a custom `TransformFile` class, which applies the anonymizer class method.
 3. The anonymized data is then written to the output file using a writable stream.
 4. The entire process is handled asynchronously using Node.js streams and the `pipeline` function.
 
